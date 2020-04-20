@@ -111,7 +111,6 @@ def save_updates_as_csv():
             "County",
             "City",
             "Neighborhood",
-            "Intersection",
         ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
