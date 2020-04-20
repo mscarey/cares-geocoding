@@ -27,7 +27,16 @@ class TestGeocoding:
         likely = geocoding.get_likely_geocode(row)
         assert likely["street"] == "12 North Murdeaux Lane"
 
-    def test_response_coordinates_differ_from_csv(self, addresses, sphinx_response):
+    def test_response_coordinates_differ_from_csv(self, addresses, sphinx_location):
         row = addresses[0]
-        changed = geocoding.response_coordinates_differ_from_csv(row, sphinx_response)
+        changed = geocoding.response_coordinates_differ_from_csv(row, sphinx_location)
         assert changed is True
+
+    def test_make_geocode_update(self, addresses, sphinx_location):
+        row = addresses[2]
+        update = geocoding.make_geocode_update(
+            csv_row=row, api_location=sphinx_location
+        )
+        assert update["PropertyID"] == "11335188"
+        assert update["Address"] == "12 North Murdeaux Lane"
+        assert update["Latitude"] == 32.71327

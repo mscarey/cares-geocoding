@@ -12,7 +12,7 @@ def addresses():
 
 
 @pytest.fixture
-def sphinx_response():
+def sphinx_location():
     location = """{"street":"12 North Murdeaux Lane",
     "adminArea6":"","adminArea6Type":"Neighborhood","adminArea5":"Dallas","adminArea5Type":"City",
     "adminArea4":"","adminArea4Type":"County","adminArea3":"TX","adminArea3Type":"State","adminArea1":"US",
