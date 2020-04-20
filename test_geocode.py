@@ -18,5 +18,6 @@ class TestGeocoding:
         row = addresses[0]
         assert row["PropertyName"] == "Bell Stonebriar"
         latitude, longitude = geocoding.get_coordinates(row)
+        # 32.378061, -96.166077
         assert 32 < latitude < 33
         assert -97 < longitude < -96

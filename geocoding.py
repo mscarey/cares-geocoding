@@ -1,5 +1,4 @@
 import csv
-from dataclasses import dataclass
 import os
 from typing import Dict, List, Tuple
 
@@ -27,14 +26,22 @@ def request_geocode(row) -> Dict:
     full_address = make_full_address(row)
     response = requests.get(
         "http://www.mapquestapi.com/geocoding/v1/address",
-        data={"key": MAPQUEST_KEY, "location": full_address, "maxResults": 1},
+        params={"key": MAPQUEST_KEY, "location": full_address, "maxResults": 1},
     ).json()
     return response
+
+
+def coordinates_changed(row: Dict, lat: float, lng: float) -> bool:
+    if abs(row["Latitude"] - lat) > 0.01:
+        return True
+    if abs(row["Longitude"] - lng) > 0.01:
+        return True
+    return False
 
 
 def get_coordinates(row) -> Tuple[float, float]:
     response = request_geocode(row)
     result = response["results"][0]
-    lat = result["location"]["latLng"]["lat"]
-    lng = result["location"]["latLng"]["lng"]
+    lat = result["locations"][0]["latLng"]["lat"]
+    lng = result["locations"][0]["latLng"]["lng"]
     return lat, lng
