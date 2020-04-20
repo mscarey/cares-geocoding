@@ -22,7 +22,7 @@ def make_full_address(row: Dict[str, str]):
     return f'{row["PropertyName"]}, {row["Address"]}, {row["City "]}, {row["State"]}'
 
 
-def request_geocode(row) -> Dict:
+def request_geocode(row: Dict[str, str]) -> Dict:
     full_address = make_full_address(row)
     response = requests.get(
         "http://www.mapquestapi.com/geocoding/v1/address",
@@ -31,24 +31,41 @@ def request_geocode(row) -> Dict:
     return response
 
 
-def get_likely_geocodes(row) -> Optional[Dict]:
-    """Accept only the geocodes that get the zip code right."""
+def get_likely_geocode(row) -> Optional[Dict]:
+    """Accept only a geocode that gets the zip code right."""
     response = request_geocode(row)
     for location in response["results"][0]["locations"]:
-        if location["postalCode"][:5] == row["Zip"][:5]:
+        if (
+            location["postalCode"][:5] == row["Zip"][:5]
+            and location["geocodeQuality"] == "ADDRESS"
+        ):
             return location
     return None
 
 
-def coordinates_changed(row: Dict, lat: float, lng: float) -> bool:
-    if abs(float(row["Latitude"]) - lat) > 0.01:
+def response_coordinates_differ_from_csv(csv_row: Dict, api_location: Dict) -> bool:
+    if abs(float(csv_row["Latitude"]) - api_location["latLng"]["lat"]) > 0.01:
         return True
-    if abs(float(row["Longitude"]) - lng) > 0.01:
+    if abs(float(csv_row["Longitude"]) - api_location["latLng"]["lng"]) > 0.01:
         return True
     return False
 
 
-def get_coordinates(location: Dict) -> Tuple[float, float]:
-    lat = location["latLng"]["lat"]
-    lng = location["latLng"]["lng"]
-    return lat, lng
+def make_geocode_update(csv_row: Dict, api_location: Dict) -> Dict:
+    """Make an update for one location, assuming an update is needed."""
+    update = {"PropertyID": csv_row["PropertyID"]}
+    update["Address"] = api_location.get("street")
+    update["Latitude"] = api_location["latLng"]["lat"]
+    update["Longitude"] = api_location["latLng"]["lng"]
+
+    for colnum in range(1, 7):
+        colname = api_location.get(f"adminArea{colnum}Type")
+        colval = api_location.get(f"adminArea{colnum}")
+
+        if colname and colval:
+            update[colname] = colval
+    return update
+
+
+def get_update_from_mapquest_api(csv_row: Dict) -> Optional[Dict]:
+    pass

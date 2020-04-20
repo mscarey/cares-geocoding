@@ -17,21 +17,17 @@ class TestGeocoding:
     def test_get_coordinates_for_address(self, addresses):
         row = addresses[0]
         assert row["PropertyName"] == "Bell Stonebriar"
-        latitude, longitude = geocoding.get_coordinates(row)
-        # 32.378061, -96.166077
-        assert 32 < latitude < 33
-        assert -97 < longitude < -96
+        response = geocoding.request_geocode(row)
+        assert response["results"][0]["locations"][0]["street"].startswith("5250 Town")
 
     @pytest.mark.vcr()
     def test_get_likely_geocodes(self, addresses):
         row = addresses[2]
         assert row["PropertyName"] == "SPHINX AT MURDEAUX VILLAS"
-        likely = [x for x in geocoding.get_likely_geocodes(row)]
-        assert likely[0] == "Austin"
+        likely = geocoding.get_likely_geocode(row)
+        assert likely["street"] == "12 North Murdeaux Lane"
 
-    def test_coordinates_changed(self, addresses):
+    def test_response_coordinates_differ_from_csv(self, addresses, sphinx_response):
         row = addresses[0]
-        lat = 33.088442
-        lng = -96.84384
-        changed = geocoding.coordinates_changed(row, lat, lng)
+        changed = geocoding.response_coordinates_differ_from_csv(row, sphinx_response)
         assert changed is True
