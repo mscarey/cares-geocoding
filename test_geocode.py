@@ -8,6 +8,11 @@ class TestGeocoding:
         rows = geocoding.collect_rows()
         assert rows[0]["AssignedTo"] == "Matt"
 
+    def test_make_address_from_row(self, addresses):
+        row = addresses[0]
+        full_address = "5250 Town and Country Boulevard, Frisco, TX 75034"
+        assert geocoding.make_full_address(row) == full_address
+
     @pytest.mark.vcr()
     def test_get_coordinates_for_address(self, addresses):
         row = addresses[0]

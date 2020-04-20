@@ -3,6 +3,7 @@
 .pytest_cache/
 .vscode/
 __pycache__/
+cassettes/
 venv/
 CARES_input.csv
 training_notes.txt
