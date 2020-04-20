@@ -1,3 +1,10 @@
+"""
+Use Mapquest API to find likely addresses and coordinates for apartment buildings.
+
+Only generates an update if a coordinate returned by the API differs from the existing
+coordinates by at least 0.005.
+"""
+
 import csv
 import os
 from typing import Dict, Iterator, List, Optional, Tuple
@@ -9,6 +16,8 @@ import requests
 load_dotenv()
 
 MAPQUEST_KEY = os.getenv("MAPQUEST_KEY")
+
+SIGNIFICANT_DISTANCE = 0.005
 
 
 def collect_rows() -> List[Dict[str, str]]:
@@ -43,9 +52,15 @@ def get_likely_location(row) -> Optional[Dict]:
 
 
 def response_coordinates_differ_from_csv(csv_row: Dict, api_location: Dict) -> bool:
-    if abs(float(csv_row["Latitude"]) - api_location["latLng"]["lat"]) > 0.01:
+    if (
+        abs(float(csv_row["Latitude"]) - api_location["latLng"]["lat"])
+        > SIGNIFICANT_DISTANCE
+    ):
         return True
-    if abs(float(csv_row["Longitude"]) - api_location["latLng"]["lng"]) > 0.01:
+    if (
+        abs(float(csv_row["Longitude"]) - api_location["latLng"]["lng"])
+        > SIGNIFICANT_DISTANCE
+    ):
         return True
     return False
 
@@ -56,6 +71,8 @@ def make_geocode_update(csv_row: Dict, api_location: Dict) -> Dict:
     update["Address"] = api_location.get("street")
     update["Latitude"] = api_location["latLng"]["lat"]
     update["Longitude"] = api_location["latLng"]["lng"]
+    if api_location.get("intersection"):
+        update["Intersection"] = api_location.get("intersection")
 
     for colnum in range(1, 7):
         colname = api_location.get(f"adminArea{colnum}Type")
@@ -71,3 +88,37 @@ def get_update_for_row_if_needed(csv_row: Dict) -> Optional[Dict]:
     if location and response_coordinates_differ_from_csv(csv_row, location):
         return make_geocode_update(csv_row, location)
     return None
+
+
+def make_address_updates() -> Iterator[Dict]:
+    csv_rows = collect_rows()
+    for csv_row in csv_rows:
+        if csv_row["Status"] == "Incomplete":
+            update = get_update_for_row_if_needed(csv_row)
+            if update is not None:
+                yield update
+
+
+def save_updates_as_csv():
+    with open("updates.csv", "w") as csvfile:
+        fieldnames = [
+            "PropertyID",
+            "Address",
+            "Latitude",
+            "Longitude",
+            "Country",
+            "State",
+            "County",
+            "City",
+            "Neighborhood",
+            "Intersection",
+        ]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for row_dict in make_address_updates():
+            writer.writerow(row_dict)
+
+
+if __name__ == "__main__":
+    save_updates_as_csv()
