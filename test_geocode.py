@@ -21,10 +21,10 @@ class TestGeocoding:
         assert response["results"][0]["locations"][0]["street"].startswith("5250 Town")
 
     @pytest.mark.vcr()
-    def test_get_likely_geocodes(self, addresses):
+    def test_get_likely_locations(self, addresses):
         row = addresses[2]
         assert row["PropertyName"] == "SPHINX AT MURDEAUX VILLAS"
-        likely = geocoding.get_likely_geocode(row)
+        likely = geocoding.get_likely_location(row)
         assert likely["street"] == "12 North Murdeaux Lane"
 
     def test_response_coordinates_differ_from_csv(self, addresses, sphinx_location):
@@ -40,3 +40,9 @@ class TestGeocoding:
         assert update["PropertyID"] == "11335188"
         assert update["Address"] == "12 North Murdeaux Lane"
         assert update["Latitude"] == 32.71327
+
+    @pytest.mark.vcr()
+    def test_no_update_because_none_needed(self, addresses):
+        row = addresses[4]
+        update = geocoding.get_update_for_row_if_needed(row)
+        assert update is None

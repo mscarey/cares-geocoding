@@ -31,14 +31,13 @@ def request_geocode(row: Dict[str, str]) -> Dict:
     return response
 
 
-def get_likely_geocode(row) -> Optional[Dict]:
+def get_likely_location(row) -> Optional[Dict]:
     """Accept only a geocode that gets the zip code right."""
     response = request_geocode(row)
     for location in response["results"][0]["locations"]:
-        if (
-            location["postalCode"][:5] == row["Zip"][:5]
-            and location["geocodeQuality"] == "ADDRESS"
-        ):
+        if location["postalCode"][:5] == row["Zip"][:5] and location[
+            "geocodeQuality"
+        ] in ("ADDRESS", "POINT"):
             return location
     return None
 
@@ -67,5 +66,8 @@ def make_geocode_update(csv_row: Dict, api_location: Dict) -> Dict:
     return update
 
 
-def get_update_from_mapquest_api(csv_row: Dict) -> Optional[Dict]:
-    pass
+def get_update_for_row_if_needed(csv_row: Dict) -> Optional[Dict]:
+    location = get_likely_location(csv_row)
+    if location and response_coordinates_differ_from_csv(csv_row, location):
+        return make_geocode_update(csv_row, location)
+    return None
